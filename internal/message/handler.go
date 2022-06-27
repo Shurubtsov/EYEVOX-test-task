@@ -5,14 +5,17 @@ import (
 	"net/http"
 
 	"github.com/dshurubtsov/internal/handlers"
+	"github.com/dshurubtsov/pkg/logging"
 	"github.com/julienschmidt/httprouter"
 )
 
 type handler struct {
+	logger *logging.Logger
 }
 
 func NewHandler() handlers.Handler {
-	return &handler{}
+	logger := logging.GetLogger()
+	return &handler{logger: logger}
 }
 
 func (h *handler) Register(router *httprouter.Router) {
