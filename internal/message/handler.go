@@ -23,13 +23,16 @@ func (h *handler) Register(router *httprouter.Router) {
 
 func (h *handler) GetListMessages(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
 	w.Write([]byte("List of id messages"))
+	w.WriteHeader(http.StatusOK)
 }
 
 func (h *handler) GetMessageByID(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
 	param := params.ByName("id")
 	w.Write([]byte(fmt.Sprintf("Message with id: %s", param)))
+	w.WriteHeader(http.StatusOK)
 }
 
 func (h *handler) CreateMessage(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
 	w.Write([]byte("Create message."))
+	w.WriteHeader(http.StatusCreated)
 }

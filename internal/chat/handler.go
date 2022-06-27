@@ -21,6 +21,7 @@ func (h *handler) Register(router *httprouter.Router) {
 
 func (h *handler) GetChats(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
 	w.Write([]byte("This is list of "))
+	w.WriteHeader(http.StatusCreated)
 }
 
 func (h *handler) CreateChat(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
