@@ -21,6 +21,7 @@ type Client interface {
 
 func NewClient(ctx context.Context, maxAttemts int, sc config.StorageConfig) (pool *pgxpool.Pool, err error) {
 	dsn := fmt.Sprintf("postgresql://%s:%s@%s:%s/%s", sc.Username, sc.Password, sc.Host, sc.Port, sc.Database)
+	log.Println("dsn -> ", dsn)
 
 	err = doWithTries(func() error {
 		ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
@@ -38,11 +39,12 @@ func NewClient(ctx context.Context, maxAttemts int, sc config.StorageConfig) (po
 		log.Fatal("error with tries connect to postgre")
 	}
 
+	log.Println("connect to postgres")
 	return pool, nil
 }
 
 func doWithTries(fn func() error, attemts int, delay time.Duration) (err error) {
-	for attemts < 0 {
+	for attemts > 0 {
 		if err = fn(); err != nil {
 			time.Sleep(delay)
 			attemts--
