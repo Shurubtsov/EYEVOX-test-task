@@ -12,6 +12,7 @@ services:
       POSTGRES_DB: go_test_db
     volumes:
       - ./migrations/schema.sql:/docker-entrypoint-initdb.d/schema.sql
+      - pgdata:/var/lib/postgresql/data/
     restart: always
     networks:
       - gonet
@@ -46,3 +47,6 @@ services:
 networks:
   gonet:
     driver: bridge
+
+volumes:
+  pgdata:
