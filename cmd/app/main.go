@@ -12,6 +12,7 @@ import (
 	chatdb "github.com/dshurubtsov/internal/chat/db"
 	"github.com/dshurubtsov/internal/config"
 	"github.com/dshurubtsov/internal/message"
+	msgdb "github.com/dshurubtsov/internal/message/db"
 	"github.com/dshurubtsov/pkg/client/postgresql"
 	"github.com/dshurubtsov/pkg/logging"
 	"github.com/julienschmidt/httprouter"
@@ -23,10 +24,11 @@ func main() {
 	logger := logging.GetLogger()
 
 	cfg := config.GetConfig()
+	logger.Info("Config: ", cfg)
 
 	router := httprouter.New()
 
-	postgreClient, err := postgresql.NewClient(context.TODO(), 3, cfg.Storage)
+	postgreClient, err := postgresql.NewClient(context.TODO(), 5, cfg.Storage)
 	if err != nil {
 		logger.Fatalf("Can't create client of postgresql, err: %v", err)
 	}
@@ -36,8 +38,10 @@ func main() {
 	chatService := chat.NewService(chatRepository, logger)
 	chatHandler := chat.NewHandler(chatService)
 
-	// TODO message entity, repository, service
-	messageHandler := message.NewHandler()
+	// message entity
+	msgRepository := msgdb.NewRepository(postgreClient, logger)
+	msgService := message.NewService(msgRepository, logger)
+	messageHandler := message.NewHandler(msgService)
 
 	logger.Info("Register handlers")
 	chatHandler.Register(router)
