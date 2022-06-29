@@ -23,6 +23,7 @@ func NewService(rep Repository, logger *logging.Logger) ChatService {
 }
 
 func (s *service) CreateChat(ctx context.Context, chat *Chat) error {
+	// create chat from repository
 	if err := s.repository.Create(ctx, chat); err != nil {
 		s.logger.Errorf("Error with create some chat from service, err: %v", err)
 		return err

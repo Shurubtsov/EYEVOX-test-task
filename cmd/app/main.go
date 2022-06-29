@@ -20,15 +20,18 @@ import (
 
 func main() {
 
+	// logger initialization
 	logging.Init()
 	logger := logging.GetLogger()
 
+	// get configuration for app
 	cfg := config.GetConfig()
 	logger.Info("Config: ", cfg)
 
+	// init router for handlers
 	router := httprouter.New()
 
-	postgreClient, err := postgresql.NewClient(context.TODO(), 5, cfg.Storage)
+	postgreClient, err := postgresql.NewClient(context.TODO(), 5, cfg.Storage, logger)
 	if err != nil {
 		logger.Fatalf("Can't create client of postgresql, err: %v", err)
 	}
@@ -44,12 +47,16 @@ func main() {
 	messageHandler := message.NewHandler(msgService)
 
 	logger.Info("Register handlers")
+
+	// registration our handlers for entities from router
 	chatHandler.Register(router)
 	messageHandler.Register(router)
 
+	// Start app
 	start(router, cfg)
 }
 
+// Entry point for start app
 func start(router *httprouter.Router, cfg *config.Config) {
 	logger := logging.GetLogger()
 
@@ -67,6 +74,6 @@ func start(router *httprouter.Router, cfg *config.Config) {
 		ReadTimeout:  15 * time.Second,
 	}
 
-	logger.Infof("Server is listening on port %s:%s", cfg.Listen.BindIP, cfg.Listen.Port)
+	logger.Infof("Start server listening on port %s:%s", cfg.Listen.BindIP, cfg.Listen.Port)
 	log.Fatalln(server.Serve(listener))
 }
