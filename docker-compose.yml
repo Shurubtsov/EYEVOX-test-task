@@ -1,0 +1,48 @@
+version: '3.9'
+
+services:
+  db:
+    image: postgres
+    container_name: database
+    ports:
+      - 5432:5432
+    environment:
+      POSTGRES_PASSWORD: admin
+      POSGRES_USER: postgres
+      POSTGRES_DB: go_test_db
+    volumes:
+      - ./migrations/schema.sql:/docker-entrypoint-initdb.d/schema.sql
+    restart: always
+    networks:
+      - gonet
+  
+  adminer:
+    image: adminer
+    restart: always
+    ports:
+      - 8080:8080
+    depends_on:
+      - db
+    links:
+      - db
+    networks:
+      - gonet
+  
+  app:
+    build: .
+    container_name: app
+    ports:
+      - 4000:4000
+    environment:
+      DB_USERNAME: postgres
+      DB_PASSWORD: admin
+    depends_on:
+      - db
+    links:
+      - db
+    networks:
+      - gonet
+
+networks:
+  gonet:
+    driver: bridge
