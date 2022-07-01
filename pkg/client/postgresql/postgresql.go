@@ -23,7 +23,7 @@ type Client interface {
 // Create new client for work with driver of database
 func NewClient(ctx context.Context, maxAttemts int, sc config.StorageConfig, logger *logging.Logger) (pool *pgxpool.Pool, err error) {
 	dsn := fmt.Sprintf("postgresql://%s:%s@%s:%s/%s", sc.Username, sc.Password, sc.Host, sc.Port, sc.Database)
-	logger.Info("dsn -> ", dsn)
+	logger.Info("Dsn -> ", dsn)
 
 	err = doWithTries(func() error {
 		ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
