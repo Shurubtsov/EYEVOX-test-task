@@ -4,109 +4,63 @@ import (
 	"context"
 	"errors"
 	"testing"
-	"time"
 
-	chatPkg "github.com/dshurubtsov/internal/chat"
+	"github.com/dshurubtsov/internal/chat"
+	//chatPkg "github.com/dshurubtsov/internal/chat"
 	"github.com/dshurubtsov/pkg/logging"
+	"github.com/stretchr/testify/assert"
 )
 
 func Test_service_CreateChat(t *testing.T) {
-	type args struct {
-		ctx  context.Context
-		chat *chatPkg.Chat
-	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
+	// mock behavior with return others
+	type mockReturn func(s *RepositoryMock, inputChat chat.Chat)
 
-	mockRep := new(RepositoryMock)
-	logger := logging.GetLogger()
-	service := chatPkg.NewService(mockRep, logger)
-
-	testEntities := []chatPkg.Chat{
-		{
-			Name:            "bullychat",
-			FounderNickname: "korki",
-		},
-		{
-			Name:            "",
-			FounderNickname: "_",
-		},
-		{
-			Name:            "String",
-			FounderNickname: "",
-		},
-		{
-			Name:            "ErrorDBchat",
-			FounderNickname: "error",
-		},
-	}
-
+	// test cases
 	tests := []struct {
-		name    string
-		s       chatPkg.ChatService
-		args    args
-		wantErr bool
+		name       string
+		inputChat  chat.Chat
+		mockReturn mockReturn
+		wantErr    error
 	}{
-		// TODO: Add test cases.
 		{
-			name: "test",
-			s:    service,
-			args: args{
-				ctx:  ctx,
-				chat: &testEntities[0],
+			name: "input OK",
+			inputChat: chat.Chat{
+				Name:            "test",
+				FounderNickname: "test",
 			},
-			wantErr: true,
+			mockReturn: func(s *RepositoryMock, inputChat chat.Chat) {
+				s.Mock.On("Create", context.TODO(), &inputChat).Return(nil)
+			},
+			wantErr: nil,
 		},
 		{
-			name: "test2",
-			s:    service,
-			args: args{
-				ctx:  ctx,
-				chat: &testEntities[1],
+			name: "input BAD",
+			inputChat: chat.Chat{
+				Name:            "",
+				FounderNickname: "",
 			},
-			wantErr: true,
-		},
-		{
-			name: "test3",
-			s:    service,
-			args: args{
-				ctx:  ctx,
-				chat: &testEntities[2],
+			mockReturn: func(s *RepositoryMock, inputChat chat.Chat) {
+				s.Mock.On("Create", context.TODO(), &inputChat).Return(nil)
 			},
-			wantErr: true,
-		},
-		{
-			name: "test4",
-			s:    service,
-			args: args{
-				ctx:  ctx,
-				chat: &testEntities[3],
-			},
-			wantErr: true,
+			wantErr: errors.New("cant' create empty struct"),
 		},
 	}
 
-	mockError := errors.New("failed")
-
-	//tests with mock return Error from repository
-	for i, tt := range tests {
+	// performance our tests
+	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			mockRep.On("Create", ctx, &testEntities[i]).Return(mockError)
-			err := tt.s.CreateChat(tt.args.ctx, tt.args.chat)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("service.CreateChat() error = %v, wantErr %v", err, tt.wantErr)
-			}
-		})
-	}
+			// init dependencies
+			mockRep := new(RepositoryMock)
+			logger := logging.GetLogger()
+			service := chat.NewService(mockRep, logger)
 
-	// tests with successfuly return nil from mockRepository
-	for i, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			mockRep.On("Create", ctx, &testEntities[i]).Return(mockError)
-			if err := tt.s.CreateChat(tt.args.ctx, tt.args.chat); (err != nil) != tt.wantErr {
-				t.Errorf("service.CreateChat() error = %v, wantErr %v", err, tt.wantErr)
-			}
+			// setup mock calls
+			tt.mockReturn(mockRep, tt.inputChat)
+
+			// execute method from mock and assert test
+			err := service.CreateChat(context.TODO(), &tt.inputChat)
+			assert.Equal(t, tt.wantErr, err)
 		})
 	}
 }

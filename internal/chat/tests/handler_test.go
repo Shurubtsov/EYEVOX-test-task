@@ -2,8 +2,8 @@ package chat
 
 import (
 	"bytes"
-	"encoding/json"
-	"fmt"
+	"context"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -11,50 +11,67 @@ import (
 	"github.com/dshurubtsov/internal/chat"
 	"github.com/julienschmidt/httprouter"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
 )
 
 func Test_Handler_CreateChat(t *testing.T) {
-	//Arrange
-	router := httprouter.New()
-	service := new(ServiceMock)
-	service.Mock.On("CreateChat", mock.Anything, mock.Anything).Return(nil)
 
-	handler := chat.NewHandler(service)
-	handler.Register(router)
-
-	rr := httptest.NewRecorder()
+	// mock behavior when we call method
+	type mockReturn func(m *ServiceMock, inputChat chat.Chat)
 
 	// test cases
 	tests := []struct {
 		name         string
-		testChat     chat.Chat
+		inputBody    string
+		inputChat    chat.Chat
+		mockReturn   mockReturn
 		codeExpected int
 	}{
 		{
-			name: "test 1",
-			testChat: chat.Chat{
-				Name:            "chat1",
-				FounderNickname: "creator1",
+			name:      "input OK",
+			inputBody: `{"name": "test", "founder_nickname": "test"}`,
+			inputChat: chat.Chat{
+				Name:            "test",
+				FounderNickname: "test",
+			},
+			mockReturn: func(m *ServiceMock, inputChat chat.Chat) {
+				m.Mock.On("CreateChat", context.TODO(), &inputChat).Return(nil)
 			},
 			codeExpected: http.StatusCreated,
 		},
 		{
-			name: "test 2",
-			testChat: chat.Chat{
-				Name:            "chat_test",
-				FounderNickname: "test_creator"},
-			codeExpected: http.StatusCreated,
+			name:      "input BAD",
+			inputBody: `{"name": "", "founder_nickname": ""}`,
+			inputChat: chat.Chat{
+				Name:            "",
+				FounderNickname: "",
+			},
+			mockReturn: func(m *ServiceMock, inputChat chat.Chat) {
+				m.Mock.On("CreateChat", context.TODO(), &inputChat).Return(errors.New("failed"))
+			},
+			codeExpected: http.StatusInternalServerError,
 		},
 	}
 
-	//Act
+	// Performance our test cases
 	for _, tt := range tests {
-		body, _ := json.Marshal(tt.testChat)
-		request, err := http.NewRequest(http.MethodPost, "/chats/create", bytes.NewBuffer(body))
-		assert.NoError(t, err)
+		t.Run(tt.name, func(t *testing.T) {
+			// Init deps
+			router := httprouter.New()
+			service := new(ServiceMock)
 
-		router.ServeHTTP(rr, request)
-		assert.Equal(t, tt.codeExpected, rr.Code, fmt.Sprint("Name test: ", tt.name))
+			tt.mockReturn(service, tt.inputChat)
+
+			handler := chat.NewHandler(service)
+			handler.Register(router)
+
+			// Test Request
+			rr := httptest.NewRecorder()
+			request, err := http.NewRequest(http.MethodPost, "/chats/create", bytes.NewBuffer([]byte(tt.inputBody)))
+			assert.NoError(t, err)
+
+			router.ServeHTTP(rr, request)
+			// Asserting
+			assert.Equal(t, tt.codeExpected, rr.Code)
+		})
 	}
 }
