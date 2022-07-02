@@ -34,7 +34,7 @@ func (h *handler) CreateChat(w http.ResponseWriter, r *http.Request, params http
 	// read request body for unmarshal json to struct of chat entity
 	data, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		h.logger.Errorf("Error with get body from request, incorrect data, err: %v", err)
+		//h.logger.Errorf("Error with get body from request, incorrect data, err: %v", err)
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
@@ -42,7 +42,7 @@ func (h *handler) CreateChat(w http.ResponseWriter, r *http.Request, params http
 
 	// creating chat
 	if err = h.service.CreateChat(context.TODO(), &chat); err != nil {
-		h.logger.Error(err)
+		//h.logger.Error(err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
