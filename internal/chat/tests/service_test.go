@@ -2,12 +2,12 @@ package chat
 
 import (
 	"context"
+	"errors"
 	"testing"
 	"time"
 
 	chatPkg "github.com/dshurubtsov/internal/chat"
 	"github.com/dshurubtsov/pkg/logging"
-	"github.com/stretchr/testify/mock"
 )
 
 func Test_service_CreateChat(t *testing.T) {
@@ -23,13 +23,23 @@ func Test_service_CreateChat(t *testing.T) {
 	logger := logging.GetLogger()
 	service := chatPkg.NewService(mockRep, logger)
 
-	cht := chatPkg.Chat{
-		Name:            "bullychat",
-		FounderNickname: "korki",
-	}
-	cht2 := chatPkg.Chat{
-		Name:            "",
-		FounderNickname: "_",
+	testEntities := []chatPkg.Chat{
+		{
+			Name:            "bullychat",
+			FounderNickname: "korki",
+		},
+		{
+			Name:            "",
+			FounderNickname: "_",
+		},
+		{
+			Name:            "String",
+			FounderNickname: "",
+		},
+		{
+			Name:            "ErrorDBchat",
+			FounderNickname: "error",
+		},
 	}
 
 	tests := []struct {
@@ -44,24 +54,56 @@ func Test_service_CreateChat(t *testing.T) {
 			s:    service,
 			args: args{
 				ctx:  ctx,
-				chat: &cht,
+				chat: &testEntities[0],
 			},
-			wantErr: false,
+			wantErr: true,
 		},
 		{
 			name: "test2",
 			s:    service,
 			args: args{
 				ctx:  ctx,
-				chat: &cht2,
+				chat: &testEntities[1],
+			},
+			wantErr: true,
+		},
+		{
+			name: "test3",
+			s:    service,
+			args: args{
+				ctx:  ctx,
+				chat: &testEntities[2],
+			},
+			wantErr: true,
+		},
+		{
+			name: "test4",
+			s:    service,
+			args: args{
+				ctx:  ctx,
+				chat: &testEntities[3],
 			},
 			wantErr: true,
 		},
 	}
 
-	for _, tt := range tests {
+	mockError := errors.New("failed")
+
+	//tests with mock return Error from repository
+	for i, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			mockRep.On("Create", mock.Anything).Return(nil)
+			mockRep.On("Create", ctx, &testEntities[i]).Return(mockError)
+			err := tt.s.CreateChat(tt.args.ctx, tt.args.chat)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("service.CreateChat() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+
+	// tests with successfuly return nil from mockRepository
+	for i, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			mockRep.On("Create", ctx, &testEntities[i]).Return(mockError)
 			if err := tt.s.CreateChat(tt.args.ctx, tt.args.chat); (err != nil) != tt.wantErr {
 				t.Errorf("service.CreateChat() error = %v, wantErr %v", err, tt.wantErr)
 			}

@@ -7,11 +7,11 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-type RepositoryMock struct {
+type ServiceMock struct {
 	mock.Mock
 }
 
-func (m *RepositoryMock) Create(ctx context.Context, chat *chat.Chat) error {
-	args := m.Called(ctx, chat)
+func (s *ServiceMock) CreateChat(ctx context.Context, chat *chat.Chat) error {
+	args := s.Mock.Called(ctx, chat)
 	return args.Error(0)
 }
