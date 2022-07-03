@@ -11,6 +11,7 @@ import (
 	"github.com/dshurubtsov/internal/chat"
 	"github.com/julienschmidt/httprouter"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 )
 
 func Test_Handler_CreateChat(t *testing.T) {
@@ -34,7 +35,7 @@ func Test_Handler_CreateChat(t *testing.T) {
 				FounderNickname: "test",
 			},
 			mockReturn: func(m *ServiceMock, inputChat chat.Chat) {
-				m.Mock.On("CreateChat", context.TODO(), &inputChat).Return(nil)
+				m.Mock.On("CreateChat", mock.Anything, &inputChat).Return(nil)
 			},
 			codeExpected: http.StatusCreated,
 		},
@@ -46,7 +47,7 @@ func Test_Handler_CreateChat(t *testing.T) {
 				FounderNickname: "",
 			},
 			mockReturn: func(m *ServiceMock, inputChat chat.Chat) {
-				m.Mock.On("CreateChat", context.TODO(), &inputChat).Return(errors.New("failed"))
+				m.Mock.On("CreateChat", mock.Anything, &inputChat).Return(errors.New("failed"))
 			},
 			codeExpected: http.StatusInternalServerError,
 		},
@@ -61,7 +62,7 @@ func Test_Handler_CreateChat(t *testing.T) {
 
 			tt.mockReturn(service, tt.inputChat)
 
-			handler := chat.NewHandler(service)
+			handler := chat.NewHandler(service, context.TODO())
 			handler.Register(router)
 
 			// Test Request

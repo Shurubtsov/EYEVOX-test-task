@@ -20,6 +20,9 @@ import (
 
 func main() {
 
+	// parent context of app
+	ctx := context.Background()
+
 	// logger initialization
 	logging.Init()
 	logger := logging.GetLogger()
@@ -31,7 +34,7 @@ func main() {
 	// init router for handlers
 	router := httprouter.New()
 
-	postgreClient, err := postgresql.NewClient(context.TODO(), 5, cfg.Storage, logger)
+	postgreClient, err := postgresql.NewClient(ctx, 5, cfg.Storage, logger)
 	if err != nil {
 		logger.Fatalf("Can't create client of postgresql, err: %v", err)
 	}
@@ -39,12 +42,12 @@ func main() {
 	// chat entity
 	chatRepository := chatdb.NewRepository(postgreClient, logger)
 	chatService := chat.NewService(chatRepository, logger)
-	chatHandler := chat.NewHandler(chatService)
+	chatHandler := chat.NewHandler(chatService, ctx)
 
 	// message entity
 	msgRepository := msgdb.NewRepository(postgreClient, logger)
 	msgService := message.NewService(msgRepository, logger)
-	messageHandler := message.NewHandler(msgService)
+	messageHandler := message.NewHandler(msgService, ctx)
 
 	logger.Info("Register handlers")
 

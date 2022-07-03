@@ -2,6 +2,7 @@ package message
 
 import (
 	"context"
+	"time"
 
 	"github.com/dshurubtsov/pkg/logging"
 )
@@ -25,6 +26,10 @@ func NewService(rep Repository, logger *logging.Logger) MessageService {
 }
 
 func (s *service) CreateMessage(ctx context.Context, msg *Message, chatName string) error {
+
+	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
+
 	var err error
 	// find chat id by his name
 	msg.ChatID, err = s.repository.FindChatID(ctx, chatName)
@@ -45,6 +50,9 @@ func (s *service) CreateMessage(ctx context.Context, msg *Message, chatName stri
 
 func (s *service) FindListID(ctx context.Context, chatName string, limit, offset int) ([]Message, error) {
 
+	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
+
 	// get chat id from repository by his name
 	chatID, err := s.repository.FindChatID(ctx, chatName)
 	if err != nil {
@@ -63,6 +71,10 @@ func (s *service) FindListID(ctx context.Context, chatName string, limit, offset
 }
 
 func (s *service) FindMessageByID(ctx context.Context, id int, msg *Message) (*Message, error) {
+
+	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
+
 	// find one message from repository
 	msg, err := s.repository.FindByID(ctx, id, msg)
 	if err != nil {

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
+	"time"
 
 	"github.com/dshurubtsov/internal/handlers"
 	"github.com/dshurubtsov/pkg/logging"
@@ -14,11 +15,12 @@ import (
 type handler struct {
 	logger  *logging.Logger
 	service ChatService
+	ctx     context.Context
 }
 
-func NewHandler(service ChatService) handlers.Handler {
+func NewHandler(service ChatService, ctx context.Context) handlers.Handler {
 	logger := logging.GetLogger()
-	return &handler{logger: logger, service: service}
+	return &handler{logger: logger, service: service, ctx: ctx}
 }
 
 // Initialize API endpoints
@@ -31,6 +33,10 @@ func (h *handler) CreateChat(w http.ResponseWriter, r *http.Request, params http
 	// create entity
 	chat := Chat{}
 
+	// context for request
+	ctx, cancel := context.WithTimeout(h.ctx, 5*time.Second)
+	defer cancel()
+
 	// read request body for unmarshal json to struct of chat entity
 	data, err := ioutil.ReadAll(r.Body)
 	if err != nil {
@@ -41,7 +47,7 @@ func (h *handler) CreateChat(w http.ResponseWriter, r *http.Request, params http
 	json.Unmarshal(data, &chat)
 
 	// creating chat
-	if err = h.service.CreateChat(context.TODO(), &chat); err != nil {
+	if err = h.service.CreateChat(ctx, &chat); err != nil {
 		//h.logger.Error(err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return

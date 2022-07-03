@@ -9,6 +9,7 @@ import (
 	//chatPkg "github.com/dshurubtsov/internal/chat"
 	"github.com/dshurubtsov/pkg/logging"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 )
 
 func Test_service_CreateChat(t *testing.T) {
@@ -30,7 +31,7 @@ func Test_service_CreateChat(t *testing.T) {
 				FounderNickname: "test",
 			},
 			mockReturn: func(s *RepositoryMock, inputChat chat.Chat) {
-				s.Mock.On("Create", context.TODO(), &inputChat).Return(nil)
+				s.Mock.On("Create", mock.Anything, &inputChat).Return(nil)
 			},
 			wantErr: nil,
 		},
@@ -41,7 +42,7 @@ func Test_service_CreateChat(t *testing.T) {
 				FounderNickname: "",
 			},
 			mockReturn: func(s *RepositoryMock, inputChat chat.Chat) {
-				s.Mock.On("Create", context.TODO(), &inputChat).Return(nil)
+				s.Mock.On("Create", mock.Anything, &inputChat).Return(nil)
 			},
 			wantErr: errors.New("cant' create empty struct"),
 		},

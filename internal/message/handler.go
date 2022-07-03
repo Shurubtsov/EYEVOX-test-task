@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/dshurubtsov/internal/handlers"
 	"github.com/dshurubtsov/pkg/logging"
@@ -15,11 +16,12 @@ import (
 type handler struct {
 	logger     *logging.Logger
 	serviceMsg MessageService
+	ctx        context.Context
 }
 
-func NewHandler(service MessageService) handlers.Handler {
+func NewHandler(service MessageService, ctx context.Context) handlers.Handler {
 	logger := logging.GetLogger()
-	return &handler{logger: logger, serviceMsg: service}
+	return &handler{logger: logger, serviceMsg: service, ctx: ctx}
 }
 
 // Initialize API endpoints
@@ -45,12 +47,15 @@ func (h *handler) GetListMessages(w http.ResponseWriter, r *http.Request, params
 		return
 	}
 
+	ctx, cancel := context.WithTimeout(h.ctx, 5*time.Second)
+	defer cancel()
+
 	// pagination
 	limit := 5
 	offset := limit * (page - 1)
 
 	// return list with id
-	listID, err := h.serviceMsg.FindListID(context.TODO(), chatName, limit, offset)
+	listID, err := h.serviceMsg.FindListID(ctx, chatName, limit, offset)
 	if err != nil {
 		h.logger.Info("Can't get list of id")
 		w.WriteHeader(http.StatusNotFound)
@@ -80,8 +85,11 @@ func (h *handler) GetMessageByID(w http.ResponseWriter, r *http.Request, params 
 		return
 	}
 
+	ctx, cancel := context.WithTimeout(h.ctx, 5*time.Second)
+	defer cancel()
+
 	// finding message in repository
-	message, err := h.serviceMsg.FindMessageByID(context.TODO(), id, &Message{})
+	message, err := h.serviceMsg.FindMessageByID(ctx, id, &Message{})
 	if err != nil {
 		h.logger.Error("Error found message")
 		w.WriteHeader(http.StatusNotFound)
@@ -125,8 +133,11 @@ func (h *handler) CreateMessage(w http.ResponseWriter, r *http.Request, params h
 		return
 	}
 
+	ctx, cancel := context.WithTimeout(h.ctx, 5*time.Second)
+	defer cancel()
+
 	// create message from service
-	if err = h.serviceMsg.CreateMessage(context.TODO(), &msg, chatName); err != nil {
+	if err = h.serviceMsg.CreateMessage(ctx, &msg, chatName); err != nil {
 		h.logger.Errorf("Error with create new message, err: %v", err)
 		w.WriteHeader(http.StatusNotFound)
 		return

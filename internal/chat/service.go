@@ -3,6 +3,7 @@ package chat
 import (
 	"context"
 	"errors"
+	"time"
 
 	"github.com/dshurubtsov/pkg/logging"
 )
@@ -24,6 +25,10 @@ func NewService(rep Repository, logger *logging.Logger) ChatService {
 }
 
 func (s *service) CreateChat(ctx context.Context, chat *Chat) error {
+
+	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
+
 	if chat.Name == "" || chat.FounderNickname == "" {
 		return errors.New("cant' create empty struct")
 	}

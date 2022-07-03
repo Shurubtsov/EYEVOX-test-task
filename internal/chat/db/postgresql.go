@@ -3,6 +3,7 @@ package chat
 import (
 	"context"
 	"errors"
+	"time"
 
 	"github.com/dshurubtsov/internal/chat"
 	"github.com/dshurubtsov/pkg/client/postgresql"
@@ -20,6 +21,10 @@ func NewRepository(client postgresql.Client, logger *logging.Logger) chat.Reposi
 }
 
 func (r *repository) Create(ctx context.Context, chat *chat.Chat) error {
+
+	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
+
 	q := `INSERT INTO chats(name, founder_nickname) 
 		  VALUES ($1, $2) RETURNING id`
 	if err := r.client.QueryRow(ctx, q, chat.Name, chat.FounderNickname).Scan(&chat.ID); err != nil {
